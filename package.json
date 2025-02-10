@@ -1,0 +1,24 @@
+﻿{
+	"author": "Qriist",
+	"bugs": "https://github.com/Qriist/SQriLiteDB/issues",
+	"dependencies": {
+		"Qriist/Null": "github:Qriist/Null@^v1.0.0 --main Null.ahk",
+		"Qriist/SqlarMultipleCiphers": "github:Qriist/SqlarMultipleCiphers@^v2.0.2+SqlarMultipleCiphers.ICU.7z --main "
+	},
+	"description": "Enhancement fork of just_me's fantastic SQLite library. Can return a true Null type.",
+	"keywords": [
+		"SQL",
+		"SQLite",
+		"data",
+		"database",
+		"null"
+	],
+	"license": "",
+	"main": "SQriLiteDB.ahk",
+	"name": "SQriLiteDB",
+	"repository": {
+		"type": "github",
+		"url": "Qriist/SQriLiteDB"
+	},
+	"version": "0.80.0"
+}

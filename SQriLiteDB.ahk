@@ -1,4 +1,6 @@
 #Requires AutoHotkey v2.0.0
+;#include <Aris/Qriist/SqlarMultipleCiphers> ; github:Qriist/SqlarMultipleCiphers@v2.0.2+SqlarMultipleCiphers.ICU.7z --main *.*
+#include <Aris/Qriist/Null> ; github:Qriist/Null@v1.0.0 --main Null.ahk
 ; ======================================================================================================================
 ; Function:         Class definitions as wrappers for SQLite3.dll to work with SQLite DBs.
 ; AHK version:      AHK 2.0.10 (U32/U64)
@@ -45,11 +47,23 @@ Class SQriLiteDB {
             If FileExist(A_ScriptDir . "\SQriLiteDB.ini") {
                SQLiteDLL := IniRead(A_ScriptDir . "\SQriLiteDB.ini", "Main", "DllPath", SQLiteDLL)
                SQriLiteDB._SQLiteDLL := SQLiteDLL
+         } else {
+            SQLiteDLL := this._findArisInstallDir("Qriist","SqlarMultipleCiphers") "\sqlite3.dll"
+            If FileExist(SQLiteDLL)
+               SQriLiteDB._SQLiteDLL := SQLiteDLL
+         }
+         Critical("On") ;ensure the dll load doesn't get interrupted
+         If FileExist(SQriLiteDB._SQLiteDLL){
+            oldWorkingDir := A_WorkingDir
+            SplitPath(SQriLiteDB._SQLiteDLL,,&dir)
+            SetWorkingDir(dir)
          }
          If !(DLL := DllCall("LoadLibrary", "Str", SQriLiteDB._SQLiteDLL, "UPtr")) {
             MsgBox("DLL " . SQLiteDLL . " does not exist!", "SQriLiteDB Error", 16)
             ExitApp
          }
+         SetWorkingDir(oldWorkingDir)
+         Critical("Off")
          LibVersion := StrGet(DllCall("SQlite3.dll\sqlite3_libversion", "Cdecl UPtr"), "UTF-8")
          If (VerCompare(LibVersion, SQriLiteDB._MinVersion) < 0) {
             DllCall("FreeLibrary", "Ptr", DLL)
@@ -62,6 +76,20 @@ Class SQriLiteDB {
       }
       SQriLiteDB._RefCount += 1
    }
+   _findArisInstallDir(user,packageName){ ;dynamically finds a local versioned Aris installation
+      If DirExist(A_ScriptDir "\lib\Aris\" user) ;"top level" install
+         packageDir := A_ScriptDir "\lib\Aris\" user
+      else if DirExist(A_ScriptDir "\..\lib\Aris\" user) ;script one level down
+         packageDir := A_ScriptDir "\..\lib\Aris\" user
+      else
+         return ""
+      loop files (packageDir "\" packageName "@*") , "D"{
+         ;should end up with the latest installation
+         ArisDir := packageDir "\" A_LoopFileName
+      }
+      return ArisDir
+    }
+
    ; ===================================================================================================================
    ; DESTRUCTOR __Delete
    ; ===================================================================================================================
@@ -803,7 +831,7 @@ Class SQriLiteDB {
                   Value := DllCall("SQlite3.dll\sqlite3_column_double", "Ptr", This._Handle, "Int", Column, "Cdecl Double")
                   Res[A_Index] := Value
                Case SQLITE_NULL:
-                  Res[A_Index] := ""
+                  Res[A_Index] := Null()
                Default:
                   Value := DllCall("SQlite3.dll\sqlite3_column_text", "Ptr", This._Handle, "Int", Column, "Cdecl UPtr")
                   Res[A_Index] := StrGet(Value, "UTF-8")
