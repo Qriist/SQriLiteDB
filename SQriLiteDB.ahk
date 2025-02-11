@@ -1,5 +1,4 @@
 #Requires AutoHotkey v2.0.0
-#include <Aris/G33kDude/HashMap> ; G33kDude/HashMap@1.0.0
 ;#include <Aris/Qriist/SqlarMultipleCiphers> ; github:Qriist/SqlarMultipleCiphers@v2.0.2+SqlarMultipleCiphers.ICU.7z --main *.*
 #include <Aris/Qriist/Null> ; github:Qriist/Null@v1.0.0 --main Null.ahk
 ; ======================================================================================================================
@@ -806,7 +805,7 @@ Class SQriLiteDB {
          This.CurrentStep += 1
          If !IsSet(Row)
             Return True
-         Res := []
+         Res := Map()
          RC := DllCall("SQlite3.dll\sqlite3_data_count", "Ptr", This._Handle, "Cdecl Int")
          If (RC < 1)
             Return True
@@ -814,28 +813,29 @@ Class SQriLiteDB {
          Loop RC {
             Column := A_Index - 1
             ColumnType := DllCall("SQlite3.dll\sqlite3_column_type", "Ptr", This._Handle, "Int", Column, "Cdecl Int")
+            Name := StrGet(DllCall("SQlite3.dll\sqlite3_column_name", "Ptr", This._Handle, "Int", Column, "Cdecl Ptr"),"UTF-8")
             Switch ColumnType {
                Case SQLITE_BLOB:
                   BlobPtr := DllCall("SQlite3.dll\sqlite3_column_blob", "Ptr", This._Handle, "Int", Column, "Cdecl UPtr")
                   BlobSize := DllCall("SQlite3.dll\sqlite3_column_bytes", "Ptr", This._Handle, "Int", Column, "Cdecl Int")
                   If (BlobPtr = 0) || (BlobSize = 0)
-                     Res[A_Index] := ""
+                     Res[Name] := ""
                   Else {
                      Blob := Buffer(BlobSize)
                      DllCall("Kernel32.dll\RtlMoveMemory", "Ptr", Blob, "Ptr", BlobPtr, "Ptr", BlobSize)
-                     Res[A_Index] := Blob
+                     Res[Name] := Blob
                   }
                Case SQLITE_INTEGER:
                   Value := DllCall("SQlite3.dll\sqlite3_column_int64", "Ptr", This._Handle, "Int", Column, "Cdecl Int64")
-                  Res[A_Index] := Value
+                  Res[Name] := Value
                Case SQLITE_FLOAT:
                   Value := DllCall("SQlite3.dll\sqlite3_column_double", "Ptr", This._Handle, "Int", Column, "Cdecl Double")
-                  Res[A_Index] := Value
+                  Res[Name] := Value
                Case SQLITE_NULL:
-                  Res[A_Index] := Null()
+                  Res[Name] := Null()
                Default:
                   Value := DllCall("SQlite3.dll\sqlite3_column_text", "Ptr", This._Handle, "Int", Column, "Cdecl UPtr")
-                  Res[A_Index] := StrGet(Value, "UTF-8")
+                  Res[Name] := StrGet(Value, "UTF-8")
             }
          }
          %Row% := Res
