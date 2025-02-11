@@ -1,4 +1,5 @@
 #Requires AutoHotkey v2.0.0
+#include <Aris/G33kDude/HashMap> ; G33kDude/HashMap@1.0.0
 ;#include <Aris/Qriist/SqlarMultipleCiphers> ; github:Qriist/SqlarMultipleCiphers@v2.0.2+SqlarMultipleCiphers.ICU.7z --main *.*
 #include <Aris/Qriist/Null> ; github:Qriist/Null@v1.0.0 --main Null.ahk
 ; ======================================================================================================================
