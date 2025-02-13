@@ -1000,14 +1000,26 @@ Class SQriLiteDB {
          , "Int", Index
          , "Cdecl Int")
    }
-   sqlite3_bind_parameter_count(Stmt) {   ;https://sqlite.org/c3ref/bind_blob.html
+   sqlite3_bind_parameter_count(Stmt) {   ;https://sqlite.org/c3ref/bind_parameter_count.html
       static sqlite3_bind_parameter_count := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_parameter_count")
       return DllCall(sqlite3_bind_parameter_count
          , "Ptr", Stmt
          , "Cdecl Int")
    }
-   ; sqlite3_bind_parameter_index
-   ; sqlite3_bind_parameter_name
+   sqlite3_bind_parameter_index(stmt, zName) {  ;untested   https://sqlite.org/c3ref/bind_parameter_index.html
+      static sqlite3_bind_parameter_index := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_parameter_index")
+      return DllCall(sqlite3_bind_parameter_index
+         , "Ptr", stmt
+         , "AStr", zName
+         , "Cdecl Int")
+   }
+   sqlite3_bind_parameter_name(stmt, Index) {   ;untested   https://sqlite.org/c3ref/bind_parameter_name.html
+      static sqlite3_bind_parameter_name := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_parameter_name")
+      return DllCall(sqlite3_bind_parameter_name
+         , "Ptr", stmt
+         , "Int", Index
+         , "Cdecl UPtr")
+   }
    sqlite3_bind_pointer(stmt, Index, Pointer, typeName, destructor := -1) {   ;untested   https://sqlite.org/c3ref/bind_blob.html
       static sqlite3_bind_pointer := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_pointer")
       return DllCall(sqlite3_bind_pointer
@@ -1074,45 +1086,124 @@ Class SQriLiteDB {
          , "Int64", n
          , "Cdecl Int")
    }
-   ; sqlite3_blob_bytes
-   ; sqlite3_blob_close
-   ; sqlite3_blob_open
-   ; sqlite3_blob_read
-   ; sqlite3_blob_reopen
-   ; sqlite3_blob_write
-   ; sqlite3_busy_handler
-   sqlite3_busy_timeout(Timeout) {
+   sqlite3_blob_bytes(blob) { ;untested   https://sqlite.org/c3ref/blob_bytes.html
+      static sqlite3_blob_bytes := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_blob_bytes")
+      return DllCall(sqlite3_blob_bytes
+         , "Ptr", blob
+         , "Cdecl Int")
+   }
+   sqlite3_blob_close(blob) { ;untested   https://sqlite.org/c3ref/blob_close.html
+      static sqlite3_blob_close := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_blob_close")
+      return DllCall(sqlite3_blob_close
+         , "Ptr", blob
+         , "Cdecl Int")
+   }
+   sqlite3_blob_open(db, zDb, zTable, zColumn, iRow, flags, ppBlob) {   ;untested   https://sqlite.org/c3ref/blob_open.html
+      static sqlite3_blob_open := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_blob_open")
+      return DllCall(sqlite3_blob_open
+         , "Ptr", db
+         , "AStr", zDb
+         , "AStr", zTable
+         , "AStr", zColumn
+         , "Int64", iRow
+         , "Int", flags
+         , "UPtrP", &ppBlob
+         , "Cdecl Int")
+   }
+   sqlite3_blob_read(blob, Z, N, iOffset) {  ;untested   https://sqlite.org/c3ref/blob_read.html
+      static sqlite3_blob_read := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_blob_read")
+      return DllCall(sqlite3_blob_read
+         , "Ptr", blob
+         , "Ptr", Z
+         , "Int", N
+         , "Int", iOffset
+         , "Cdecl Int")
+   }
+   sqlite3_blob_reopen(blob, iRow) {   ;untested   https://sqlite.org/c3ref/blob_reopen.html
+      static sqlite3_blob_reopen := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_blob_reopen")
+      return DllCall(sqlite3_blob_reopen
+         , "Ptr", blob
+         , "Int64", iRow
+         , "Cdecl Int")
+   }
+   sqlite3_blob_write(blob, z, n, iOffset) { ;untested   https://sqlite.org/c3ref/blob_write.html
+      static sqlite3_blob_write := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_blob_write")
+      return DllCall(sqlite3_blob_write
+         , "Ptr", blob
+         , "Ptr", z
+         , "Int", n
+         , "Int", iOffset
+         , "Cdecl Int")
+   }
+   sqlite3_busy_handler(db, callback, userData) {  ;untested   https://sqlite.org/c3ref/busy_handler.html
+      static sqlite3_busy_handler := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_busy_handler")
+      return DllCall(sqlite3_busy_handler
+         , "Ptr", db
+         , "Ptr", callback
+         , "Ptr", userData
+         , "Cdecl Int")
+   }
+   sqlite3_busy_timeout(Timeout) {  ;untested   https://sqlite.org/c3ref/busy_timeout.html
       static sqlite3_busy_timeout := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_busy_timeout")
       return DllCall(sqlite3_busy_timeout
          , "Ptr", this._Handle
          , "Int", Timeout
          , "Cdecl Int")
    }
-   ; sqlite3_cancel_auto_extension
-   sqlite3_changes() {
+   sqlite3_cancel_auto_extension(xEntryPoint) { ;untested   https://sqlite.org/c3ref/cancel_auto_extension.html
+      static sqlite3_cancel_auto_extension := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_cancel_auto_extension")
+      return DllCall(sqlite3_cancel_auto_extension
+         , "Ptr", xEntryPoint
+         , "Cdecl Int")
+   }
+
+   sqlite3_changes() {  ;https://sqlite.org/c3ref/changes.html
       static sqlite3_changes := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_changes")
       return DllCall(sqlite3_changes
          , "Ptr", this._Handle
          , "Cdecl Int")
    }
-   ; sqlite3_changes64
-   sqlite3_clear_bindings() {
+   sqlite3_changes64() {   ;untested   https://sqlite.org/c3ref/changes.html
+      static sqlite3_changes64 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_changes64")
+      return DllCall(sqlite3_changes64
+         , "Ptr", this._Handle
+         , "Cdecl Int64")
+   }
+   sqlite3_clear_bindings() { ;untested   https://sqlite.org/c3ref/clear_bindings.html
       static sqlite3_clear_bindings := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_clear_bindings")
       return DllCall(sqlite3_clear_bindings
          , "Ptr", this._Handle
          , "Cdecl Int")
    }
-
-   sqlite3_close() {
-    static sqlite3_close := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_close")
-    return DllCall(sqlite3_close
-        , "Ptr", this._Handle
-        , "Cdecl Int")
+   sqlite3_close() { ;https://sqlite.org/c3ref/close.html
+      static sqlite3_close := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_close")
+      return DllCall(sqlite3_close
+         , "Ptr", this._Handle
+         , "Cdecl Int")
    }
-   ; sqlite3_close_v2
-   ; sqlite3_collation_needed
-   ; sqlite3_collation_needed16
-   sqlite3_column_blob(stmt, Column) {
+   sqlite3_close_v2() { ;untested   https://sqlite.org/c3ref/close.html
+      static sqlite3_close_v2 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_close_v2")
+      return DllCall(sqlite3_close_v2
+         , "Ptr", this._Handle
+         , "Cdecl Int")
+   }
+   sqlite3_collation_needed(pArg, xCollNeeded) {  ;untested   https://sqlite.org/c3ref/collation_needed.html
+      static sqlite3_collation_needed := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_collation_needed")
+      return DllCall(sqlite3_collation_needed
+         , "Ptr", this._Handle
+         , "Ptr", pArg
+         , "Ptr", xCollNeeded
+         , "Cdecl Int")
+   }
+   sqlite3_collation_needed16(pArg, xCollNeeded) {   ;untested   https://sqlite.org/c3ref/collation_needed.html
+      static sqlite3_collation_needed16 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_collation_needed16")
+      return DllCall(sqlite3_collation_needed16
+         , "Ptr", this._Handle
+         , "Ptr", pArg
+         , "Ptr", xCollNeeded
+         , "Cdecl Int")
+   }
+   sqlite3_column_blob(stmt, Column) { 
       static sqlite3_column_blob := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_blob")
       return DllCall(sqlite3_column_blob
          , "Ptr", stmt
