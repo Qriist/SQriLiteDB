@@ -1203,82 +1203,185 @@ Class SQriLiteDB {
          , "Ptr", xCollNeeded
          , "Cdecl Int")
    }
-   sqlite3_column_blob(stmt, Column) { 
+   sqlite3_column_blob(stmt, Column) { ;https://sqlite.org/c3ref/column_blob.html
       static sqlite3_column_blob := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_blob")
       return DllCall(sqlite3_column_blob
          , "Ptr", stmt
          , "Int", Column
          , "Cdecl UPtr")
    }
-   sqlite3_column_bytes(stmt, Column) {
+   sqlite3_column_bytes(stmt, Column) {   ;https://sqlite.org/c3ref/column_blob.html
       static sqlite3_column_bytes := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_bytes")
       return DllCall(sqlite3_column_bytes
          , "Ptr", stmt
          , "Int", Column
          , "Cdecl Int")
    }
-
-   ; sqlite3_column_bytes16
-   sqlite3_column_count(Stmt) {
+   sqlite3_column_bytes16(stmt, Column) { ;untested   https://sqlite.org/c3ref/column_blob.html
+      static sqlite3_column_bytes16 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_bytes16")
+      return DllCall(sqlite3_column_bytes16
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl Int")
+   }
+   sqlite3_column_count(Stmt) {  ;https://sqlite.org/c3ref/column_count.html
       static sqlite3_column_count := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_count")
       return DllCall(sqlite3_column_count
          , "Ptr", Stmt
          , "Cdecl Int")
    }
-   ; sqlite3_column_database_name
-   ; sqlite3_column_database_name16
+   sqlite3_column_database_name(stmt, Column) {       ;untested    https://sqlite.org/c3ref/column_database_name.html
+      static sqlite3_column_database_name := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_database_name")
+      return DllCall(sqlite3_column_database_name
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
+   sqlite3_column_database_name16(stmt, Column) {       ;untested    https://sqlite.org/c3ref/column_database_name.html
+      static sqlite3_column_database_name16 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_database_name16")
+      return DllCall(sqlite3_column_database_name16
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
    ; sqlite3_column_decltype
    ; sqlite3_column_decltype16
-   sqlite3_column_double(stmt, Column) {
+   sqlite3_column_double(stmt, Column) {  ;untested   https://sqlite.org/c3ref/column_blob.html
       static sqlite3_column_double := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_double")
       return DllCall(sqlite3_column_double
          , "Ptr", stmt
          , "Int", Column
          , "Cdecl Double")
    }
-   ; sqlite3_column_int
-   sqlite3_column_int64(stmt, Column) {
+   sqlite3_column_int(stmt, Column) {  ;untested   https://sqlite.org/c3ref/column_blob.html
+      static sqlite3_column_int := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_int")
+      return DllCall(sqlite3_column_int
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl Int")
+   }
+   sqlite3_column_int64(stmt, Column) {   ;https://sqlite.org/c3ref/column_blob.html
       static sqlite3_column_int64 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_int64")
       return DllCall(sqlite3_column_int64
          , "Ptr", stmt
          , "Int", Column
          , "Cdecl Int64")
    }
-   sqlite3_column_name(stmt, col) {
+   sqlite3_column_name(stmt, Column) {   ;https://sqlite.org/c3ref/column_blob.html
       static sqlite3_column_name := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_name")
       return DllCall(sqlite3_column_name
          , "Ptr", stmt
-         , "Int", col
+         , "Int", Column
          , "Cdecl UPtr")
    }
-   ; sqlite3_column_name16
-   ; sqlite3_column_origin_name
-   ; sqlite3_column_origin_name16
-   ; sqlite3_column_table_name
-   ; sqlite3_column_table_name16
-   sqlite3_column_text(stmt, Column) {
+   sqlite3_column_name16(stmt, Column) {       ;untested    https://sqlite.org/c3ref/column_name.html
+      static sqlite3_column_name16 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_name16")
+      return DllCall(sqlite3_column_name16
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
+   sqlite3_column_decltype(stmt, Column) {       ;untested    https://sqlite.org/c3ref/column_decltype.html
+      static sqlite3_column_decltype := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_decltype")
+      return DllCall(sqlite3_column_decltype
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
+   sqlite3_column_decltype16(stmt, Column) {       ;untested    https://sqlite.org/c3ref/column_decltype.html
+      static sqlite3_column_decltype16 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_decltype16")
+      return DllCall(sqlite3_column_decltype16
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
+   sqlite3_column_origin_name(stmt, Column) {       ;untested    https://sqlite.org/c3ref/column_database_name.html
+      static sqlite3_column_origin_name := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_origin_name")
+      return DllCall(sqlite3_column_origin_name
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
+   sqlite3_column_origin_name16(stmt, Column) {       ;untested    https://sqlite.org/c3ref/column_database_name.html
+      static sqlite3_column_origin_name16 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_origin_name16")
+      return DllCall(sqlite3_column_origin_name16
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
+   sqlite3_column_table_name(stmt, Column) {       ;untested    https://sqlite.org/c3ref/column_database_name.html
+      static sqlite3_column_table_name := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_table_name")
+      return DllCall(sqlite3_column_table_name
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
+   sqlite3_column_table_name16(stmt, Column) {       ;untested    https://sqlite.org/c3ref/column_database_name.html
+      static sqlite3_column_table_name16 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_table_name16")
+      return DllCall(sqlite3_column_table_name16
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
+   sqlite3_column_text(stmt, Column) { ;https://sqlite.org/c3ref/column_blob.html
       static sqlite3_column_text := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_text")
       return DllCall(sqlite3_column_text
          , "Ptr", stmt
          , "Int", Column
          , "Cdecl UPtr")
    }
-   ; sqlite3_column_text16
-   sqlite3_column_type(stmt, Column) {
+   sqlite3_column_type(stmt, Column) { ;untested   https://sqlite.org/c3ref/column_blob.html
       static sqlite3_column_type := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_type")
       return DllCall(sqlite3_column_type
          , "Ptr", stmt
          , "Int", Column
          , "Cdecl Int")
    }
-   ; sqlite3_column_value
-   ; sqlite3_commit_hook
-   ; sqlite3_compileoption_get
-   ; sqlite3_compileoption_used
-   ; sqlite3_complete
-   ; sqlite3_complete16
-   ; sqlite3_config
-   ; sqlite3_context_db_handle
+   sqlite3_column_value(stmt, Column) {  ;untested   https://sqlite.org/c3ref/column_blob.html
+      static sqlite3_column_value := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_value")
+      return DllCall(sqlite3_column_value
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
+   sqlite3_commit_hook(db, xCallback, pArg) {       ;untested    https://sqlite.org/c3ref/commit_hook.html
+      static sqlite3_commit_hook := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_commit_hook")
+      return DllCall(sqlite3_commit_hook
+         , "Ptr", db
+         , "Ptr", xCallback
+         , "Ptr", pArg
+         , "Cdecl Ptr")
+   }
+   sqlite3_compileoption_used(zOptName) {       ;untested    https://sqlite.org/c3ref/compileoption_used.html
+      static sqlite3_compileoption_used := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_compileoption_used")
+      return DllCall(sqlite3_compileoption_used
+         , "AStr", zOptName
+         , "Cdecl Int")
+   }
+   sqlite3_compileoption_get(N) {       ;untested    https://sqlite.org/c3ref/compileoption_used.html
+      static sqlite3_compileoption_get := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_compileoption_get")
+      return DllCall(sqlite3_compileoption_get
+         , "Int", N
+         , "Cdecl UPtr")
+   }
+   sqlite3_complete(sql) {       ;untested    https://sqlite.org/c3ref/complete.html
+      static sqlite3_complete := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_complete")
+      return DllCall(sqlite3_complete
+         , "AStr", sql
+         , "Cdecl Int")
+   }
+   sqlite3_complete16(sql) {       ;untested    https://sqlite.org/c3ref/complete.html
+      static sqlite3_complete16 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_complete16")
+      return DllCall(sqlite3_complete16
+         , "Ptr", sql
+         , "Cdecl Int")
+   }
+   sqlite3_context_db_handle(ctx) {       ;untested    https://sqlite.org/c3ref/context_db_handle.html
+      static sqlite3_context_db_handle := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_context_db_handle")
+      return DllCall(sqlite3_context_db_handle
+         , "Ptr", ctx
+         , "Cdecl Ptr")
+   }
    ; sqlite3_create_collation
    ; sqlite3_create_collation16
    ; sqlite3_create_collation_v2
@@ -1309,7 +1412,7 @@ Class SQriLiteDB {
    }
    ; sqlite3_database_file_object
    ; sqlite3_db_cacheflush
-   sqlite3_db_config(optionCode,value) {
+   sqlite3_db_config(optionCode,value) {  ;https://sqlite.org/c3ref/config.html
       static sqlite3_db_config := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_db_config")
       return DllCall(sqlite3_db_config
          , "Ptr", this._Handle
@@ -1530,7 +1633,14 @@ Class SQriLiteDB {
    ; sqlite3_result_value
    ; sqlite3_result_zeroblob
    ; sqlite3_result_zeroblob64
-   ; sqlite3_rollback_hook
+   sqlite3_rollback_hook(db, xCallback, pArg) { ;untested    https://sqlite.org/c3ref/commit_hook.html
+      static sqlite3_rollback_hook := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_rollback_hook")
+      return DllCall(sqlite3_rollback_hook
+         , "Ptr", db
+         , "Ptr", xCallback
+         , "Ptr", pArg
+         , "Cdecl Ptr")
+   }
    ; sqlite3_serialize
    ; sqlite3_set_authorizer
    ; sqlite3_set_auxdata
