@@ -64,7 +64,7 @@ Class SQriLiteDB {
          }
          SetWorkingDir(oldWorkingDir)
          Critical("Off")
-         LibVersion := StrGet(DllCall("SQlite3.dll\sqlite3_libversion", "Cdecl UPtr"), "UTF-8")
+         LibVersion := StrGet(this.sqlite3_libversion(), "UTF-8")
          If (VerCompare(LibVersion, SQriLiteDB._MinVersion) < 0) {
             DllCall("FreeLibrary", "Ptr", DLL)
             MsgBox("Version " . LibVersion . " of SQLite3.dll is not supported!`n`n" .
@@ -148,7 +148,7 @@ Class SQriLiteDB {
       This._Path := DBPath
       UTF8 := This._StrToUTF8(DBPath)
       HDB := 0
-      RC := DllCall("SQlite3.dll\sqlite3_open_v2", "Ptr", UTF8, "UPtrP", &HDB, "Int", Flags, "Ptr", 0, "Cdecl Int")
+      RC := this.sqlite3_open_v2(UTF8, &HDB, Flags)
       If (RC) {
          This._Path := ""
          Return This._SetError(RC, This._ErrStr(RC) . "`n" . DBPath)
@@ -170,14 +170,15 @@ Class SQriLiteDB {
       If !(This._Handle)
          Return True
       For Each, Stmt in This._Stmts
-         DllCall("SQlite3.dll\sqlite3_finalize", "Ptr", Stmt, "Cdecl Int")
-      If (RC := DllCall("SQlite3.dll\sqlite3_close", "Ptr", This._Handle, "Cdecl Int"))
+         this.sqlite3_finalize(Stmt)
+      If (RC := this.sqlite3_close())
          Return This._SetError(RC)
       This._Path := ""
       This._Handle := ""
       This._Stmts := Map()
       Return True
    }
+
    ; ===================================================================================================================
    ; METHOD AttachDB       Add another database file to the current database connection
    ;                       http://www.sqlite.org/lang_attach.html
@@ -228,14 +229,13 @@ Class SQriLiteDB {
       If (Type(Callback) = "Func") && (Callback.MinParams = 4)
          CBPtr := CallbackCreate(Callback, "C", 4)
       UTF8 := This._StrToUTF8(SQL)
-      RC := DllCall("SQlite3.dll\sqlite3_exec", "Ptr", This._Handle, "Ptr", UTF8, "Int", CBPtr, "Ptr", ObjPtr(This),
-                    "UPtrP", &Err, "Cdecl Int")
+      RC := this.sqlite3_exec(UTF8, CBPtr, ObjPtr(This), &Err)
       If (CBPtr)
          CallbackFree(CBPtr)
       If (RC) {
          This.ErrorMsg := StrGet(Err, "UTF-8")
          This.ErrorCode := RC
-         DllCall("SQLite3.dll\sqlite3_free", "Ptr", Err, "Cdecl")
+         this.sqlite3_free(Err)
          Return False
       }
       This.Changes := This._Changes()
@@ -269,19 +269,18 @@ Class SQriLiteDB {
       If (MaxResult < -2)
          MaxResult := 0
       Local UTF8 := This._StrToUTF8(SQL)
-      RC := DllCall("SQlite3.dll\sqlite3_get_table", "Ptr", This._Handle, "Ptr", UTF8, "UPtrP", &Table,
-                    "IntP", &Rows, "IntP", &Cols, "UPtrP", &Err, "Cdecl Int")
+      RC := this.sqlite3_get_table(UTF8, &Table, &Rows, &Cols, &Err)
       If (RC) {
          This.ErrorMsg := StrGet(Err, "UTF-8")
          This.ErrorCode := RC
-         DllCall("SQLite3.dll\sqlite3_free", "Ptr", Err, "Cdecl")
+         this.sqlite3_free(Err)
          Return False
       }
       TB := SQriLiteDB._Table()
       TB.ColumnCount := Cols
       TB.RowCount := Rows
       If (MaxResult = -1) {
-         DllCall("SQLite3.dll\sqlite3_free_table", "Ptr", Table, "Cdecl")
+         this.sqlite3_free_table(Table)
          Return True
       }
       If (MaxResult = -2)
@@ -312,7 +311,7 @@ Class SQriLiteDB {
       }
       If (GetRows)
          TB.HasRows := True
-      DllCall("SQLite3.dll\sqlite3_free_table", "Ptr", Table, "Cdecl")
+      this.sqlite3_free_table(Table)
       Return True
    }
    ; ===================================================================================================================
@@ -340,23 +339,22 @@ Class SQriLiteDB {
          Return This._SetError(0, "Invalid database handle!")
       Local Stmt := 0
       Local UTF8 := This._StrToUTF8(SQL)
-      RC := DllCall("SQlite3.dll\sqlite3_prepare_v2", "Ptr", This._Handle, "Ptr", UTF8, "Int", -1,
-                    "UPtrP", &Stmt, "Ptr", 0, "Cdecl Int")
+      RC := this.sqlite3_prepare_v2(UTF8, &Stmt)
       If (RC)
          Return This._SetError(RC)
       ColumnNames := []
-      ColumnCount := DllCall("SQlite3.dll\sqlite3_column_count", "Ptr", Stmt, "Cdecl Int")
+      ColumnCount := this.sqlite3_column_count(Stmt)
       If (ColumnCount > 0) {
          ColumnNames.Length := ColumnCount
          Loop ColumnCount {
-            Pointer := DllCall("SQlite3.dll\sqlite3_column_name", "Ptr", Stmt, "Int", A_Index - 1, "Cdecl UPtr")
+            Pointer := this.sqlite3_column_name(Stmt, A_Index - 1)
             ColumnNames[A_Index] := StrGet(Pointer, "UTF-8")
          }
       }
 		ST := SQriLiteDB._Prepared()
       ST.ColumnCount := ColumnCount
       ST.ColumnNames := ColumnNames
-      ST.ParamCount := DllCall("SQlite3.dll\sqlite3_bind_parameter_count", "Ptr", Stmt, "Cdecl Int")
+      ST.ParamCount := this.sqlite3_bind_parameter_count(Stmt)
       ST._Handle := Stmt
       ST._DB := This
       This._Stmts[Stmt] := Stmt
@@ -381,8 +379,7 @@ Class SQriLiteDB {
       This.ErrorCode := 0
       If !(This._Handle)
          Return This._SetError(0, "Invalid database handle!")
-      Local RC := DllCall("SQLite3.dll\sqlite3_create_function", "Ptr", This._Handle, "AStr", Name, "Int", Args,
-                          "Int", Enc, "Ptr", Param, "Ptr", Func, "Ptr", 0, "Ptr", 0, "Cdecl Int")
+      Local RC := this.sqlite3_create_function(Name, Args, Enc, Param, Func)
       Return (RC) ? This._SetError(RC) : True
    }
    ; ===================================================================================================================
@@ -394,8 +391,7 @@ Class SQriLiteDB {
    ;                             #define SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION 1005 /* int int* */
    ; ===================================================================================================================
    EnableLoadExtension(Enable := 1) {
-      Local RC := DllCall("SQLite3.dll\sqlite3_db_config", "Ptr", This._Handle, "Int", 1005, "Int", !!Enable,
-                          "Ptr", 0, "Cdecl Int")
+      Local RC := this.sqlite3_db_config(1005,!!Enable)
       Return (RC) ? This._SetError(RC) : True
    }
    ; ===================================================================================================================
@@ -407,10 +403,8 @@ Class SQriLiteDB {
    ; Documentation:           https://www.sqlite.org/c3ref/load_extension.html
    ; ===================================================================================================================
    LoadExtension(File, Proc?) {
-      Local RC := IsSet(Proc) ? DllCall("SQLite3.dll\sqlite3_load_extension", "Ptr", This._Handle, "AStr", File,
-                                        "AStr", Proc, "Ptr", 0, "Cdecl Int")
-                              : DllCall("SQLite3.dll\sqlite3_load_extension", "Ptr", This._Handle, "AStr", File,
-                                        "Ptr", 0, "Ptr", 0, "Cdecl Int")
+      Local RC := IsSet(Proc) ? this.sqlite3_load_extension(File, Proc)
+                              : this.sqlite3_load_extension(File, 0)
       Return (RC) ? This._SetError(RC) : True
    }
    ; ===================================================================================================================
@@ -425,7 +419,7 @@ Class SQriLiteDB {
       This.SQL := ""
       If !(This._Handle)
          Return This._SetError(0, "Invalid database handle!")
-      RowID := DllCall("SQLite3.dll\sqlite3_last_insert_rowid", "Ptr", This._Handle, "Cdecl Int64")
+      RowID := this.sqlite3_last_insert_rowid()
       Return True
    }
    ; ===================================================================================================================
@@ -440,7 +434,7 @@ Class SQriLiteDB {
       This.SQL := ""
       If !(This._Handle)
          Return This._SetError(0, "Invalid database handle!")
-      Rows := DllCall("SQLite3.dll\sqlite3_total_changes", "Ptr", This._Handle, "Cdecl Int")
+      Rows := this.sqlite3_total_changes()
       Return True
    }
    ; ===================================================================================================================
@@ -459,7 +453,7 @@ Class SQriLiteDB {
          Return This._SetError(0, "Invalid database handle!")
       If !IsInteger(Timeout)
          Timeout := 1000
-      If (RC := DllCall("SQLite3.dll\sqlite3_busy_timeout", "Ptr", This._Handle, "Int", Timeout, "Cdecl Int"))
+      If (RC := this.sqlite3_busy_timeout(Timeout))
          Return This._SetError(RC)
       Return True
    }
@@ -481,9 +475,9 @@ Class SQriLiteDB {
       Local OP := Buffer(16, 0)
       StrPut(Quote ? "%Q" : "%q", OP, "UTF-8")
       Local UTF8 := This._StrToUTF8(Str)
-      Local Ptr := DllCall("SQLite3.dll\sqlite3_mprintf", "Ptr", OP, "Ptr", UTF8, "Cdecl UPtr")
+      Local Ptr := this.sqlite3_mprintf(OP, UTF8)
       Str := StrGet(Ptr, "UTF-8")
-      DllCall("SQLite3.dll\sqlite3_free", "Ptr", Ptr, "Cdecl")
+      this.sqlite3_free(Ptr)
       Return True
    }
    ; ===================================================================================================================
@@ -496,20 +490,20 @@ Class SQriLiteDB {
    ExtErrCode() {
       If !(This._Handle)
          Return 0
-      Return DllCall("SQLite3.dll\sqlite3_extended_errcode", "Ptr", This._Handle, "Cdecl Int")
+      Return this.sqlite3_extended_errcode()
    }
    ; ===================================================================================================================
    ; PRIVATE _Changes
    ; ===================================================================================================================
    _Changes() {
-      Return DllCall("SQLite3.dll\sqlite3_changes", "Ptr", This._Handle, "Cdecl Int")
+      Return this.sqlite3_changes()
    }
    ; ===================================================================================================================
    ; PRIVATE _ErrMsg
    ; ===================================================================================================================
    _ErrMsg() {
       Local RC
-      If (RC := DllCall("SQLite3.dll\sqlite3_errmsg", "Ptr", This._Handle, "Cdecl UPtr"))
+      If (RC := this.sqlite3_errmsg())
          Return StrGet(RC, "UTF-8")
       Return ""
    }
@@ -517,13 +511,13 @@ Class SQriLiteDB {
    ; PRIVATE _ErrCode
    ; ===================================================================================================================
    _ErrCode() {
-      Return DllCall("SQLite3.dll\sqlite3_errcode", "Ptr", This._Handle, "Cdecl Int")
+      Return this.sqlite3_errcode()
    }
    ; ===================================================================================================================
    ; PRIVATE _ErrStr
    ; ===================================================================================================================
    _ErrStr(ErrCode) {
-      Return StrGet(DllCall("SQLite3.dll\sqlite3_errstr", "Int", ErrCode, "Cdecl UPtr"), "UTF-8")
+      Return StrGet(this.sqlite3_errstr(ErrCode), "UTF-8")
    }
    ; ===================================================================================================================
    ; PRIVATE _SetError
@@ -733,44 +727,39 @@ Class SQriLiteDB {
                      If !(ParamType(Value) = "Buffer")
                         Return This._SetError(0, "Invalid blob object at index " . Index . "!")
                      ; Let SQLite always create a copy of the BLOB
-                     RC := DllCall("SQlite3.dll\sqlite3_bind_blob", "Ptr", This._Handle, "Int", Index, "Ptr", Value,
-                                   "Int", Value.Size, "Ptr", -1, "Cdecl Int")
+                     RC := this._DB.sqlite3_bind_blob(this._Handle, Index, Value)
                      If (RC)
                         Return This._SetError(RC)
                   Case "Double":
                      ; Value = double value
                      If !IsFloat(Value)
                         Return This._SetError(0, "Invalid value for double at index " . Index . "!")
-                     RC := DllCall("SQlite3.dll\sqlite3_bind_double", "Ptr", This._Handle, "Int", Index, "Double", Value,
-                                   "Cdecl Int")
+                     RC := this._DB.sqlite3_bind_double(this._Handle, Index, Value)
                      If (RC)
                         Return This._SetError(RC)
                   Case "Int":
                      ; Value = integer value
                      If !IsInteger(Value)
                         Return This._SetError(0, "Invalid value for int at index " . Index . "!")
-                     RC := DllCall("SQlite3.dll\sqlite3_bind_int", "Ptr", This._Handle, "Int", Index, "Int", Value,
-                                   "Cdecl Int")
+                     RC := this._DB.sqlite3_bind_int(this._Handle, Index, Value)
                      If (RC)
                         Return This._SetError(RC)
                   Case "Int64":
                      ; Value = integer value
                      If !IsInteger(Value)
                         Return This._SetError(0, "Invalid value for int64 at index " . Index . "!")
-                     RC := DllCall("SQlite3.dll\sqlite3_bind_int64", "Ptr", This._Handle, "Int", Index, "Int64", Value,
-                                   "Cdecl Int")
+                     RC := this._DB.sqlite3_bind_int64(this._Handle, Index, Value)
                      If (RC)
                         Return This._SetError(RC)
                   Case "Null":
-                     RC := DllCall("SQlite3.dll\sqlite3_bind_null", "Ptr", This._Handle, "Int", Index, "Cdecl Int")
+                     RC := this._DB.sqlite3_bind_null(this._Handle, Index)
                      If (RC)
                         Return This._SetError(RC)
                   Case "Text":
                      ; Value = zero-terminated string
                      UTF8 := This._DB._StrToUTF8(Value)
                      ; Let SQLite always create a copy of the text
-                     RC := DllCall("SQlite3.dll\sqlite3_bind_text", "Ptr", This._Handle, "Int", Index, "Ptr", UTF8,
-                                   "Int", -1, "Ptr", -1, "Cdecl Int")
+                     RC := this._DB.sqlite3_bind_text(this._Handle, Index, UTF8)
                      If (RC)
                         Return This._SetError(RC)
                }
@@ -797,7 +786,7 @@ Class SQriLiteDB {
          This.ErrorCode := 0
          If !(This._Handle)
             Return This._SetError(0, "Invalid query handle!")
-         RC := DllCall("SQlite3.dll\sqlite3_step", "Ptr", This._Handle, "Cdecl Int")
+         RC := this._DB.sqlite3_step(This._Handle)
          If (RC = This._DB._ReturnCode("SQLITE_DONE"))
             Return (This._SetError(RC, "EOR") | EOR)
          If (RC != This._DB._ReturnCode("SQLITE_ROW"))
@@ -806,18 +795,18 @@ Class SQriLiteDB {
          If !IsSet(Row)
             Return True
          Res := Map()
-         RC := DllCall("SQlite3.dll\sqlite3_data_count", "Ptr", This._Handle, "Cdecl Int")
+         RC := this._DB.sqlite3_data_count()
          If (RC < 1)
             Return True
          Res.Length := RC
          Loop RC {
             Column := A_Index - 1
-            ColumnType := DllCall("SQlite3.dll\sqlite3_column_type", "Ptr", This._Handle, "Int", Column, "Cdecl Int")
-            Name := StrGet(DllCall("SQlite3.dll\sqlite3_column_name", "Ptr", This._Handle, "Int", Column, "Cdecl Ptr"),"UTF-8")
+            ColumnType := this._DB.sqlite3_column_type(this._Handle, Column)
+            Name := StrGet(this._DB.sqlite3_column_name(this._Handle, Column),"UTF-8")
             Switch ColumnType {
                Case SQLITE_BLOB:
-                  BlobPtr := DllCall("SQlite3.dll\sqlite3_column_blob", "Ptr", This._Handle, "Int", Column, "Cdecl UPtr")
-                  BlobSize := DllCall("SQlite3.dll\sqlite3_column_bytes", "Ptr", This._Handle, "Int", Column, "Cdecl Int")
+                  BlobPtr := this._DB.sqlite3_column_blob(this._Handle, Column)
+                  BlobSize := this._DB.sqlite3_column_bytes(this._Handle, Column)
                   If (BlobPtr = 0) || (BlobSize = 0)
                      Res[Name] := ""
                   Else {
@@ -826,15 +815,15 @@ Class SQriLiteDB {
                      Res[Name] := Blob
                   }
                Case SQLITE_INTEGER:
-                  Value := DllCall("SQlite3.dll\sqlite3_column_int64", "Ptr", This._Handle, "Int", Column, "Cdecl Int64")
+                  Value := this._DB.sqlite3_column_int64(this._Handle, Column)
                   Res[Name] := Value
                Case SQLITE_FLOAT:
-                  Value := DllCall("SQlite3.dll\sqlite3_column_double", "Ptr", This._Handle, "Int", Column, "Cdecl Double")
+                  Value := this._DB.sqlite3_column_double(this._Handle, Column)
                   Res[Name] := Value
                Case SQLITE_NULL:
                   Res[Name] := Null()
                Default:
-                  Value := DllCall("SQlite3.dll\sqlite3_column_text", "Ptr", This._Handle, "Int", Column, "Cdecl UPtr")
+                  Value := this._DB.sqlite3_column_text(this._Handle, Column)
                   Res[Name] := StrGet(Value, "UTF-8")
             }
          }
@@ -866,9 +855,9 @@ Class SQriLiteDB {
          This.ErrorCode := 0
          If !(This._Handle)
             Return This._SetError(0, "Invalid query handle!")
-         If (RC := DllCall("SQlite3.dll\sqlite3_reset", "Ptr", This._Handle, "Cdecl Int"))
+         If (RC := this._DB.sqlite3_reset(this._Handle))
             Return This._SetError(RC)
-         If (ClearBindings) && (RC := DllCall("SQlite3.dll\sqlite3_clear_bindings", "Ptr", This._Handle, "Cdecl Int"))
+         If (ClearBindings) && (RC := this._DB.sqlite3_clear_bindings())
             Return This._SetError(RC)
          This.CurrentStep := 0
          Return True
@@ -886,7 +875,7 @@ Class SQriLiteDB {
          This.ErrorCode := 0
          If !(This._Handle)
             Return True
-         If (RC := DllCall("SQlite3.dll\sqlite3_finalize", "Ptr", This._Handle, "Cdecl Int"))
+         If (RC := this._DB.sqlite3_finalize(this._Handle))
             Return This._SetError(RC)
          This._DB._Stmts.Delete(This._Handle)
          This._Handle := 0
@@ -904,6 +893,562 @@ Class SQriLiteDB {
          Return False
       }
    }
+   ; sqlite3_aggregate_context
+   ; sqlite3_aggregate_count
+   ; sqlite3_auto_extension
+   ; sqlite3_autovacuum_pages
+   ; sqlite3_backup_finish
+   ; sqlite3_backup_init
+   ; sqlite3_backup_pagecount
+   ; sqlite3_backup_remaining
+   ; sqlite3_backup_step
+   sqlite3_bind_blob(stmt, Index, Value) {
+      static sqlite3_bind_blob := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_blob")
+      return DllCall(sqlite3_bind_blob
+         , "Ptr", stmt
+         , "Int", Index
+         , "Ptr", Value
+         , "Int", Value.Size
+         , "Ptr", -1
+         , "Cdecl Int")
+   }
+   ; sqlite3_bind_blob64
+   sqlite3_bind_double(stmt, Index, Value) {
+      static sqlite3_bind_double := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_double")
+      return DllCall(sqlite3_bind_double
+         , "Ptr", stmt,
+         , "Int", Index
+         , "Double", Value
+         , "Cdecl Int")
+   }
+   sqlite3_bind_int(stmt, Index, Value) {
+      static sqlite3_bind_int := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_int")
+      return DllCall(sqlite3_bind_int
+         , "Ptr", stmt,
+         , "Int", Index
+         , "Int", Value
+         , "Cdecl Int")
+   }
+   sqlite3_bind_int64(stmt, Index, Value) {
+      static sqlite3_bind_int64 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_int64")
+      return DllCall(sqlite3_bind_int64
+         , "Ptr", stmt
+         , "Int", Index
+         , "Int64", Value
+         , "Cdecl Int")
+   }
+   sqlite3_bind_null(stmt, Index) {
+      static sqlite3_bind_null := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_null")
+      return DllCall(sqlite3_bind_null
+         , "Ptr", stmt,
+         , "Int", Index
+         , "Cdecl Int")
+   }
+   sqlite3_bind_parameter_count(Stmt) {
+      static sqlite3_bind_parameter_count := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_parameter_count")
+      return DllCall(sqlite3_bind_parameter_count
+         , "Ptr", Stmt
+         , "Cdecl Int")
+   }
+   ; sqlite3_bind_parameter_index
+   ; sqlite3_bind_parameter_name
+   ; sqlite3_bind_pointer
+   sqlite3_bind_text(stmt, Index, UTF8) {
+      static sqlite3_bind_text := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_text")
+      return DllCall(sqlite3_bind_text
+         , "Ptr", stmt
+         , "Int", Index
+         , "Ptr", UTF8
+         , "Int", -1
+         , "Ptr", -1
+         , "Cdecl Int")
+   }
+   ; sqlite3_bind_text16
+   ; sqlite3_bind_text64
+   ; sqlite3_bind_value
+   ; sqlite3_bind_zeroblob
+   ; sqlite3_bind_zeroblob64
+   ; sqlite3_blob_bytes
+   ; sqlite3_blob_close
+   ; sqlite3_blob_open
+   ; sqlite3_blob_read
+   ; sqlite3_blob_reopen
+   ; sqlite3_blob_write
+   ; sqlite3_busy_handler
+   sqlite3_busy_timeout(Timeout) {
+      static sqlite3_busy_timeout := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_busy_timeout")
+      return DllCall(sqlite3_busy_timeout
+         , "Ptr", this._Handle
+         , "Int", Timeout
+         , "Cdecl Int")
+   }
+   ; sqlite3_cancel_auto_extension
+   sqlite3_changes() {
+      static sqlite3_changes := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_changes")
+      return DllCall(sqlite3_changes
+         , "Ptr", this._Handle
+         , "Cdecl Int")
+   }
+   ; sqlite3_changes64
+   sqlite3_clear_bindings() {
+      static sqlite3_clear_bindings := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_clear_bindings")
+      return DllCall(sqlite3_clear_bindings
+         , "Ptr", this._Handle
+         , "Cdecl Int")
+   }
+
+   sqlite3_close() {
+    static sqlite3_close := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_close")
+    return DllCall(sqlite3_close
+        , "Ptr", this._Handle
+        , "Cdecl Int")
+   }
+   ; sqlite3_close_v2
+   ; sqlite3_collation_needed
+   ; sqlite3_collation_needed16
+   sqlite3_column_blob(stmt, Column) {
+      static sqlite3_column_blob := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_blob")
+      return DllCall(sqlite3_column_blob
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
+   sqlite3_column_bytes(stmt, Column) {
+      static sqlite3_column_bytes := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_bytes")
+      return DllCall(sqlite3_column_bytes
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl Int")
+   }
+
+   ; sqlite3_column_bytes16
+   sqlite3_column_count(Stmt) {
+      static sqlite3_column_count := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_count")
+      return DllCall(sqlite3_column_count
+         , "Ptr", Stmt
+         , "Cdecl Int")
+   }
+   ; sqlite3_column_database_name
+   ; sqlite3_column_database_name16
+   ; sqlite3_column_decltype
+   ; sqlite3_column_decltype16
+   sqlite3_column_double(stmt, Column) {
+      static sqlite3_column_double := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_double")
+      return DllCall(sqlite3_column_double
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl Double")
+   }
+   ; sqlite3_column_int
+   sqlite3_column_int64(stmt, Column) {
+      static sqlite3_column_int64 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_int64")
+      return DllCall(sqlite3_column_int64
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl Int64")
+   }
+   sqlite3_column_name(stmt, col) {
+      static sqlite3_column_name := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_name")
+      return DllCall(sqlite3_column_name
+         , "Ptr", stmt
+         , "Int", col
+         , "Cdecl UPtr")
+   }
+   ; sqlite3_column_name16
+   ; sqlite3_column_origin_name
+   ; sqlite3_column_origin_name16
+   ; sqlite3_column_table_name
+   ; sqlite3_column_table_name16
+   sqlite3_column_text(stmt, Column) {
+      static sqlite3_column_text := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_text")
+      return DllCall(sqlite3_column_text
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl UPtr")
+   }
+   ; sqlite3_column_text16
+   sqlite3_column_type(stmt, Column) {
+      static sqlite3_column_type := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_column_type")
+      return DllCall(sqlite3_column_type
+         , "Ptr", stmt
+         , "Int", Column
+         , "Cdecl Int")
+   }
+   ; sqlite3_column_value
+   ; sqlite3_commit_hook
+   ; sqlite3_compileoption_get
+   ; sqlite3_compileoption_used
+   ; sqlite3_complete
+   ; sqlite3_complete16
+   ; sqlite3_config
+   ; sqlite3_context_db_handle
+   ; sqlite3_create_collation
+   ; sqlite3_create_collation16
+   ; sqlite3_create_collation_v2
+   ; sqlite3_create_filename
+   sqlite3_create_function(Name, Args, Enc, Param, Func) {
+      static sqlite3_create_function := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_create_function")
+      return DllCall(sqlite3_create_function
+         , "Ptr", this._Handle
+         , "AStr", Name
+         , "Int", Args
+         , "Int", Enc
+         , "Ptr", Param
+         , "Ptr", Func
+         , "Ptr", 0
+         , "Ptr", 0
+         , "Cdecl Int")
+   }
+   ; sqlite3_create_function16
+   ; sqlite3_create_function_v2
+   ; sqlite3_create_module
+   ; sqlite3_create_module_v2
+   ; sqlite3_create_window_function
+   sqlite3_data_count() {
+      static sqlite3_data_count := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_data_count")
+      return DllCall(sqlite3_data_count
+         , "Ptr", this._Handle
+         , "Cdecl Int")
+   }
+   ; sqlite3_database_file_object
+   ; sqlite3_db_cacheflush
+   sqlite3_db_config(optionCode,value) {
+      static sqlite3_db_config := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_db_config")
+      return DllCall(sqlite3_db_config
+         , "Ptr", this._Handle
+         , "Int", optionCode
+         , "Int", value
+         , "Ptr", 0
+         , "Cdecl Int")
+   }
+   ; sqlite3_db_filename
+   ; sqlite3_db_handle
+   ; sqlite3_db_mutex
+   ; sqlite3_db_name
+   ; sqlite3_db_readonly
+   ; sqlite3_db_release_memory
+   ; sqlite3_db_status
+   ; sqlite3_declare_vtab
+   ; sqlite3_deserialize
+   ; sqlite3_drop_modules
+   ; sqlite3_enable_load_extension
+   ; sqlite3_enable_shared_cache
+   sqlite3_errcode() {
+      static sqlite3_errcode := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_errcode")
+      return DllCall(sqlite3_errcode
+         , "Ptr", this._Handle
+         , "Cdecl Int")
+   }
+   sqlite3_errmsg() {
+      static sqlite3_errmsg := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_errmsg")
+      return DllCall(sqlite3_errmsg
+         , "Ptr", this._Handle
+         , "Cdecl UPtr")
+   }
+   ; sqlite3_errmsg16
+   ; sqlite3_error_offset
+   sqlite3_errstr(ErrCode) {
+      static sqlite3_errstr := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_errstr")
+      return DllCall(sqlite3_errstr
+         , "Int", ErrCode
+         , "Cdecl UPtr")
+   }
+   sqlite3_exec(UTF8, CBPtr, ObjPtr, &Err) {
+    static sqlite3_exec := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_exec")
+    return DllCall(sqlite3_exec
+        , "Ptr", this._Handle
+        , "Ptr", UTF8
+        , "Int", CBPtr
+        , "Ptr", ObjPtr
+        , "UPtrP", &Err
+        , "Cdecl Int")
+   }
+
+   ; sqlite3_expanded_sql
+   ; sqlite3_expired
+   sqlite3_extended_errcode() {
+      static sqlite3_extended_errcode := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_extended_errcode")
+      return DllCall(sqlite3_extended_errcode
+         , "Ptr", this._Handle
+         , "Cdecl Int")
+   }
+   ; sqlite3_extended_result_codes
+   ; sqlite3_file_control
+   ; sqlite3_filename_database
+   ; sqlite3_filename_journal
+   ; sqlite3_filename_wal
+   sqlite3_finalize(Ptr) {
+      static sqlite3_finalize := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_finalize")
+      return DllCall(sqlite3_finalize
+         , "Ptr", Ptr
+         , "Cdecl Int")
+   }
+   sqlite3_free(Err) {
+      static sqlite3_free := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_free")
+      return DllCall(sqlite3_free
+         , "Ptr", Err
+         , "Cdecl")
+   }
+   ; sqlite3_free_filename
+   sqlite3_free_table(Table) {
+      static sqlite3_free_table := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_free_table")
+      return DllCall(sqlite3_free_table
+         , "Ptr", Table
+         , "Cdecl")
+   }
+
+   ; sqlite3_get_autocommit
+   ; sqlite3_get_auxdata
+   ; sqlite3_get_clientdata
+   sqlite3_get_table(UTF8, &Table, &Rows, &Cols, &Err) {    ; https://www.sqlite.org/c3ref/get_table.html
+      static get_table := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_get_table")
+      return DllCall(get_table
+         , "Ptr", this._Handle
+         , "Ptr", UTF8
+         , "UPtrP", &Table
+         , "IntP", &Rows
+         , "IntP", &Cols
+         , "UPtrP", &Err
+         , "Cdecl Int")
+   }
+   ; sqlite3_global_recover
+   ; sqlite3_hard_heap_limit64
+   ; sqlite3_initialize
+   ; sqlite3_interrupt
+   ; sqlite3_is_interrupted
+   ; sqlite3_keyword_check
+   ; sqlite3_keyword_count
+   ; sqlite3_keyword_name
+   sqlite3_last_insert_rowid() {
+      static sqlite3_last_insert_rowid := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_last_insert_rowid")
+      return DllCall(sqlite3_last_insert_rowid
+         , "Ptr", this._Handle
+         , "Cdecl Int64")
+   }
+   sqlite3_libversion() {
+      static libversion := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_libversion")
+      return DllCall(libversion, "Cdecl UPtr")
+   }
+   ; sqlite3_libversion_number
+   ; sqlite3_limit
+   sqlite3_load_extension(File, Proc) {
+      static sqlite3_load_extension := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_load_extension")
+      return DllCall(sqlite3_load_extension
+         , "Ptr", this._Handle
+         , "AStr", File
+         , "AStr", Proc
+         , "Ptr", 0
+         , "Cdecl Int")
+   }
+   ; sqlite3_log
+   ; sqlite3_malloc
+   ; sqlite3_malloc64
+   ; sqlite3_memory_alarm
+   ; sqlite3_memory_highwater
+   ; sqlite3_memory_used
+   sqlite3_mprintf(OP, UTF8) {
+      static sqlite3_mprintf := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_mprintf")
+      return DllCall(sqlite3_mprintf
+         , "Ptr", OP
+         , "Ptr", UTF8
+         , "Cdecl UPtr")
+   }
+   ; sqlite3_msize
+   ; sqlite3_mutex_alloc
+   ; sqlite3_mutex_enter
+   ; sqlite3_mutex_free
+   ; sqlite3_mutex_held
+   ; sqlite3_mutex_leave
+   ; sqlite3_mutex_notheld
+   ; sqlite3_mutex_try
+   ; sqlite3_next_stmt
+   ; sqlite3_normalized_sql
+   ; sqlite3_open
+   ; sqlite3_open16
+   sqlite3_open_v2(UTF8, &HDB, Flags) {
+      static sqlite3_open_v2 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_open_v2")
+      return DllCall(sqlite3_open_v2
+         , "Ptr", UTF8
+         , "UPtrP", &HDB
+         , "Int", Flags
+         , "Ptr", 0
+         , "Cdecl Int")
+   }
+   ; sqlite3_os_end
+   ; sqlite3_os_init
+   ; sqlite3_overload_function
+   ; sqlite3_prepare
+   ; sqlite3_prepare16
+   ; sqlite3_prepare16_v2
+   ; sqlite3_prepare16_v3
+   sqlite3_prepare_v2(UTF8, &Stmt) {
+      static sqlite3_prepare_v2 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_prepare_v2")
+      return DllCall(sqlite3_prepare_v2
+         , "Ptr", this._Handle
+         , "Ptr", UTF8
+         , "Int", -1
+         , "UPtrP", &Stmt
+         , "Ptr", 0
+         , "Cdecl Int")
+   }
+
+   ; sqlite3_prepare_v3
+   ; sqlite3_preupdate_blobwrite
+   ; sqlite3_preupdate_count
+   ; sqlite3_preupdate_depth
+   ; sqlite3_preupdate_hook
+   ; sqlite3_preupdate_new
+   ; sqlite3_preupdate_old
+   ; sqlite3_profile
+   ; sqlite3_progress_handler
+   ; sqlite3_randomness
+   ; sqlite3_realloc
+   ; sqlite3_realloc64
+   ; sqlite3_release_memory
+   sqlite3_reset(Ptr) {
+      static sqlite3_reset := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_reset")
+      return DllCall(sqlite3_reset
+         , "Ptr", Ptr
+         , "Cdecl Int")
+   }
+   ; sqlite3_reset_auto_extension
+   ; sqlite3_result_blob
+   ; sqlite3_result_blob64
+   ; sqlite3_result_double
+   ; sqlite3_result_error
+   ; sqlite3_result_error16
+   ; sqlite3_result_error_code
+   ; sqlite3_result_error_nomem
+   ; sqlite3_result_error_toobig
+   ; sqlite3_result_int
+   ; sqlite3_result_int64
+   ; sqlite3_result_null
+   ; sqlite3_result_pointer
+   ; sqlite3_result_subtype
+   ; sqlite3_result_text
+   ; sqlite3_result_text16
+   ; sqlite3_result_text16be
+   ; sqlite3_result_text16le
+   ; sqlite3_result_text64
+   ; sqlite3_result_value
+   ; sqlite3_result_zeroblob
+   ; sqlite3_result_zeroblob64
+   ; sqlite3_rollback_hook
+   ; sqlite3_serialize
+   ; sqlite3_set_authorizer
+   ; sqlite3_set_auxdata
+   ; sqlite3_set_clientdata
+   ; sqlite3_set_last_insert_rowid
+   ; sqlite3_shutdown
+   ; sqlite3_sleep
+   ; sqlite3_snapshot_cmp
+   ; sqlite3_snapshot_free
+   ; sqlite3_snapshot_get
+   ; sqlite3_snapshot_open
+   ; sqlite3_snapshot_recover
+   ; sqlite3_snprintf
+   ; sqlite3_soft_heap_limit
+   ; sqlite3_soft_heap_limit64
+   ; sqlite3_sourceid
+   ; sqlite3_sql
+   ; sqlite3_status
+   ; sqlite3_status64
+   sqlite3_step(Ptr) {
+      static sqlite3_step := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_step")
+      return DllCall(sqlite3_step
+         , "Ptr", Ptr
+         , "Cdecl Int")
+   }
+   ; sqlite3_stmt_busy
+   ; sqlite3_stmt_explain
+   ; sqlite3_stmt_isexplain
+   ; sqlite3_stmt_readonly
+   ; sqlite3_stmt_scanstatus
+   ; sqlite3_stmt_scanstatus_reset
+   ; sqlite3_stmt_scanstatus_v2
+   ; sqlite3_stmt_status
+   ; sqlite3_str_append
+   ; sqlite3_str_appendall
+   ; sqlite3_str_appendchar
+   ; sqlite3_str_appendf
+   ; sqlite3_str_errcode
+   ; sqlite3_str_finish
+   ; sqlite3_str_length
+   ; sqlite3_str_new
+   ; sqlite3_str_reset
+   ; sqlite3_str_value
+   ; sqlite3_str_vappendf
+   ; sqlite3_strglob
+   ; sqlite3_stricmp
+   ; sqlite3_strlike
+   ; sqlite3_strnicmp
+   ; sqlite3_system_errno
+   ; sqlite3_table_column_metadata
+   ; sqlite3_test_control
+   ; sqlite3_thread_cleanup
+   ; sqlite3_threadsafe
+   sqlite3_total_changes() {
+      static sqlite3_total_changes := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_total_changes")
+      return DllCall(sqlite3_total_changes
+         , "Ptr", this._Handle
+         , "Cdecl Int")
+   }
+   ; sqlite3_total_changes64
+   ; sqlite3_trace
+   ; sqlite3_trace_v2
+   ; sqlite3_transfer_bindings
+   ; sqlite3_txn_state
+   ; sqlite3_unlock_notify
+   ; sqlite3_update_hook
+   ; sqlite3_uri_boolean
+   ; sqlite3_uri_int64
+   ; sqlite3_uri_key
+   ; sqlite3_uri_parameter
+   ; sqlite3_user_data
+   ; sqlite3_value_blob
+   ; sqlite3_value_bytes
+   ; sqlite3_value_bytes16
+   ; sqlite3_value_double
+   ; sqlite3_value_dup
+   ; sqlite3_value_encoding
+   ; sqlite3_value_free
+   ; sqlite3_value_frombind
+   ; sqlite3_value_int
+   ; sqlite3_value_int64
+   ; sqlite3_value_nochange
+   ; sqlite3_value_numeric_type
+   ; sqlite3_value_pointer
+   ; sqlite3_value_subtype
+   ; sqlite3_value_text
+   ; sqlite3_value_text16
+   ; sqlite3_value_text16be
+   ; sqlite3_value_text16le
+   ; sqlite3_value_type
+   ; sqlite3_version
+   ; sqlite3_vfs_find
+   ; sqlite3_vfs_register
+   ; sqlite3_vfs_unregister
+   ; sqlite3_vmprintf
+   ; sqlite3_vsnprintf
+   ; sqlite3_vtab_collation
+   ; sqlite3_vtab_config
+   ; sqlite3_vtab_distinct
+   ; sqlite3_vtab_in
+   ; sqlite3_vtab_in_first
+   ; sqlite3_vtab_in_next
+   ; sqlite3_vtab_nochange
+   ; sqlite3_vtab_on_conflict
+   ; sqlite3_vtab_rhs_value
+   ; sqlite3_wal_autocheckpoint
+   ; sqlite3_wal_checkpoint
+   ; sqlite3_wal_checkpoint_v2
+   ; sqlite3_wal_hook
+   ; sqlite3_win32_set_directory
+   ; sqlite3_win32_set_directory16
+   ; sqlite3_win32_set_directory8
+   _getDllAddress(dllPath,dllfunction){
+        return DllCall("GetProcAddress", "Ptr", DllCall("GetModuleHandle", "Str", dllPath, "Ptr"), "AStr", dllfunction, "Ptr")
+    }
 }
 ; ======================================================================================================================
 ; Exemplary custom callback function regexp()
