@@ -1924,13 +1924,6 @@ Class SQriLiteDB {
          , "AStr", zParam
          , "Cdecl AStr")
    }
-   sqlite3_uri_parameter(z, zParam) {       ;untested    https://sqlite.org/c3ref/uri_parameter.html
-      static sqlite3_uri_parameter := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_uri_parameter")
-      return DllCall(sqlite3_uri_parameter
-         , "Ptr", z
-         , "AStr", zParam
-         , "Cdecl AStr")
-   }
    sqlite3_uri_boolean(z, zParam, bDefault) {       ;untested    https://sqlite.org/c3ref/uri_parameter.html
       static sqlite3_uri_boolean := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_uri_boolean")
       return DllCall(sqlite3_uri_boolean
