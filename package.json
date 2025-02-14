@@ -1,4 +1,4 @@
-﻿{
+{
 	"author": "Qriist",
 	"bugs": "https://github.com/Qriist/SQriLiteDB/issues",
 	"dependencies": {
@@ -20,5 +20,5 @@
 		"type": "github",
 		"url": "Qriist/SQriLiteDB"
 	},
-	"version": "0.81.0"
+	"version": "0.82.0"
 }
