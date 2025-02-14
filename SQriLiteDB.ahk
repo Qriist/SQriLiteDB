@@ -1421,8 +1421,6 @@ Class SQriLiteDB {
          , "Ptr", azParam
          , "Cdecl Ptr")
    }
-
-
    sqlite3_create_function(Name, Args, Enc, Param, Func) {  ;https://sqlite.org/c3ref/create_function.html
       static sqlite3_create_function := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_create_function")
       return DllCall(sqlite3_create_function
@@ -1721,7 +1719,6 @@ Class SQriLiteDB {
          , "Ptr", Table
          , "Cdecl")
    }
-
    sqlite3_get_autocommit(db) {       ;untested    https://sqlite.org/c3ref/get_autocommit.html
       static sqlite3_get_autocommit := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_get_autocommit")
       return DllCall(sqlite3_get_autocommit
@@ -1841,7 +1838,6 @@ Class SQriLiteDB {
          , "Int", size
          , "Cdecl Ptr")
    }
-
    sqlite3_malloc64(size) {       ;untested    https://sqlite.org/c3ref/free.html
       static sqlite3_malloc64 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_malloc64")
       return DllCall(sqlite3_malloc64
