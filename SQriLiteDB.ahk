@@ -857,7 +857,7 @@ Class SQriLiteDB {
             Return This._SetError(0, "Invalid query handle!")
          If (RC := this._DB.sqlite3_reset(this._Handle))
             Return This._SetError(RC)
-         If (ClearBindings) && (RC := this._DB.sqlite3_clear_bindings())
+         If (ClearBindings) && (RC := this._DB.sqlite3_clear_bindings(this._Handle))
             Return This._SetError(RC)
          This.CurrentStep := 0
          Return True
@@ -1169,10 +1169,10 @@ Class SQriLiteDB {
          , "Ptr", this._Handle
          , "Cdecl Int64")
    }
-   sqlite3_clear_bindings() { ;untested   https://sqlite.org/c3ref/clear_bindings.html
+   sqlite3_clear_bindings(ptr) { ;untested   https://sqlite.org/c3ref/clear_bindings.html
       static sqlite3_clear_bindings := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_clear_bindings")
       return DllCall(sqlite3_clear_bindings
-         , "Ptr", this._Handle
+         , "Ptr", ptr
          , "Cdecl Int")
    }
    sqlite3_close() { ;https://sqlite.org/c3ref/close.html
