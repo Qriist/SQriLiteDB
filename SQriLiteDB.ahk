@@ -171,7 +171,7 @@ Class SQriLiteDB {
          Return True
       For Each, Stmt in This._Stmts
          this.sqlite3_finalize(Stmt)
-      If (RC := this.sqlite3_close())
+      If (RC := this.sqlite3_close(this._Handle))
          Return This._SetError(RC)
       This._Path := ""
       This._Handle := ""
@@ -1175,16 +1175,16 @@ Class SQriLiteDB {
          , "Ptr", ptr
          , "Cdecl Int")
    }
-   sqlite3_close() { ;https://sqlite.org/c3ref/close.html
+   sqlite3_close(db) { ;https://sqlite.org/c3ref/close.html
       static sqlite3_close := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_close")
       return DllCall(sqlite3_close
-         , "Ptr", this._Handle
+         , "Ptr", db
          , "Cdecl Int")
    }
-   sqlite3_close_v2() { ;untested   https://sqlite.org/c3ref/close.html
+   sqlite3_close_v2(db) { ;untested   https://sqlite.org/c3ref/close.html
       static sqlite3_close_v2 := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_close_v2")
       return DllCall(sqlite3_close_v2
-         , "Ptr", this._Handle
+         , "Ptr", db
          , "Cdecl Int")
    }
    sqlite3_collation_needed(pArg, xCollNeeded) {  ;untested   https://sqlite.org/c3ref/collation_needed.html
