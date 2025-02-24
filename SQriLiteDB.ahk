@@ -706,7 +706,7 @@ Class SQriLiteDB {
       ; Return values:     On success  - True
       ;                    On failure  - False, ErrorMsg / ErrorCode contain additional information
       ; ----------------------------------------------------------------------------------------------------------------
-      Bind(Params) {
+      Bind(Params?) {
          Static Types := {Blob: 1, Double: 1, Int: 1, Int64: 1, Null: 1, Text: 1}
          Local Index, Param, ParamType, RC, UTF8, Value
          This.ErrorMsg := ""
@@ -715,6 +715,8 @@ Class SQriLiteDB {
             This.ErrorMsg := "Invalid statement handle!"
             Return False
          }
+         If !IsSet(Params?)
+            return 1
          For Index, Param In Params {
             If (Index < 1) || (Index > This.ParamCount)
                Return This._SetError(0, "Invalid parameter index: " . Index . "!")
