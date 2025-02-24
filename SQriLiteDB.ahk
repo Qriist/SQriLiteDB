@@ -795,7 +795,7 @@ Class SQriLiteDB {
          If !IsSet(Row)
             Return True
          Res := Map()
-         RC := this._DB.sqlite3_data_count()
+         RC := this._DB.sqlite3_data_count(this._Handle)
          If (RC < 1)
             Return True
          Res.Length := RC
@@ -1495,10 +1495,10 @@ Class SQriLiteDB {
          , "Ptr", xDestroy
          , "Cdecl Int")
    }
-   sqlite3_data_count() {  ;untested   https://sqlite.org/c3ref/data_count.html
+   sqlite3_data_count(ptr) {  ;untested   https://sqlite.org/c3ref/data_count.html
       static sqlite3_data_count := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_data_count")
       return DllCall(sqlite3_data_count
-         , "Ptr", this._Handle
+         , "Ptr", ptr
          , "Cdecl Int")
    }
    sqlite3_database_file_object(zName) {       ;untested    https://sqlite.org/c3ref/database_file_object.html
