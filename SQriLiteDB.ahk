@@ -706,7 +706,7 @@ Class SQriLiteDB {
       ; Return values:     On success  - True
       ;                    On failure  - False, ErrorMsg / ErrorCode contain additional information
       ; ----------------------------------------------------------------------------------------------------------------
-      Bind(Params?) {
+      Bind(Params) {
          Static Types := {Blob: 1, Double: 1, Int: 1, Int64: 1, Null: 1, Text: 1}
          Local Index, Param, ParamType, RC, UTF8, Value
          This.ErrorMsg := ""
@@ -715,8 +715,6 @@ Class SQriLiteDB {
             This.ErrorMsg := "Invalid statement handle!"
             Return False
          }
-         If !IsSet(Params?)
-            return 1
          For Index, Param In Params {
             If (Index < 1) || (Index > This.ParamCount)
                Return This._SetError(0, "Invalid parameter index: " . Index . "!")
@@ -726,7 +724,7 @@ Class SQriLiteDB {
                Switch ParamType {
                   Case "Blob":
                      ; Value = Buffer object
-                     If !(ParamType(Value) = "Buffer")
+                     If !(Type(Value) = "Buffer")
                         Return This._SetError(0, "Invalid blob object at index " . Index . "!")
                      ; Let SQLite always create a copy of the BLOB
                      RC := this._DB.sqlite3_bind_blob(this._Handle, Index, Value)
@@ -832,7 +830,62 @@ Class SQriLiteDB {
          %Row% := Res
          Return True
       }
-      ; ----------------------------------------------------------------------------------------------------------------
+      Stepold(Row?) { ; !!!!! Note: If Row is not omitted is must be a VarRef !!!!!
+         Static SQLITE_INTEGER := 1, SQLITE_FLOAT := 2, SQLITE_BLOB := 4, SQLITE_NULL := 5
+         Static EOR := -1
+         Local Blob, BlobPtr, BlobSize, Column, ColumnType, RC, Res, Value
+         If IsSet(Row) && !(Row Is VarRef)
+            Throw TypeError("Parameter #1 requires a variable reference, but received a" .
+                            (Type(Row) ~= "i)^[aeiou]" ? "n " : " ") . Type(Row) ".", -1, Row)
+         This.ErrorMsg := ""
+         This.ErrorCode := 0
+         If !(This._Handle)
+            Return This._SetError(0, "Invalid query handle!")
+         RC := DllCall("SQlite3.dll\sqlite3_step", "Ptr", This._Handle, "Cdecl Int")
+         If (RC = This._DB._ReturnCode("SQLITE_DONE"))
+            Return (This._SetError(RC, "EOR") | EOR)
+         If (RC != This._DB._ReturnCode("SQLITE_ROW"))
+            Return This._SetError(RC)
+         This.CurrentStep += 1
+         If !IsSet(Row)
+            Return True
+         Res := []
+         RC := DllCall("SQlite3.dll\sqlite3_data_count", "Ptr", This._Handle, "Cdecl Int")
+         If (RC < 1)
+            Return True
+         Res.Length := RC
+         msgbox rc
+         Loop RC {
+            Column := A_Index - 1
+            ColumnType := DllCall("SQlite3.dll\sqlite3_column_type", "Ptr", This._Handle, "Int", Column, "Cdecl Int")
+            Switch ColumnType {
+               Case SQLITE_BLOB:
+                  BlobPtr := DllCall("SQlite3.dll\sqlite3_column_blob", "Ptr", This._Handle, "Int", Column, "Cdecl UPtr")
+                  BlobSize := DllCall("SQlite3.dll\sqlite3_column_bytes", "Ptr", This._Handle, "Int", Column, "Cdecl Int")
+                  If (BlobPtr = 0) || (BlobSize = 0)
+                     Res[A_Index] := ""
+                  Else {
+                     Blob := Buffer(BlobSize)
+                     DllCall("Kernel32.dll\RtlMoveMemory", "Ptr", Blob, "Ptr", BlobPtr, "Ptr", BlobSize)
+                     Res[A_Index] := Blob
+                  }
+               Case SQLITE_INTEGER:
+                  Value := DllCall("SQlite3.dll\sqlite3_column_int64", "Ptr", This._Handle, "Int", Column, "Cdecl Int64")
+                  Res[A_Index] := Value
+               Case SQLITE_FLOAT:
+                  Value := DllCall("SQlite3.dll\sqlite3_column_double", "Ptr", This._Handle, "Int", Column, "Cdecl Double")
+                  Res[A_Index] := Value
+               Case SQLITE_NULL:
+                  Res[A_Index] := ""
+               Default:
+                  Value := DllCall("SQlite3.dll\sqlite3_column_text", "Ptr", This._Handle, "Int", Column, "Cdecl UPtr")
+                  Res[A_Index] := StrGet(Value, "UTF-8")
+            }
+         }
+         %Row% := Res
+         Return True
+      }
+      ;-----------------------------------------------------------------------------------------------------
       ; METHOD Next        Alternative name for Step().
       ; Parameters:        Row         - Optional: VarRef to store the row array
       ; ----------------------------------------------------------------------------------------------------------------
