@@ -1139,7 +1139,7 @@ Class SQriLiteDB {
    sqlite3_bind_double(stmt, Index, Value) {   ;https://sqlite.org/c3ref/bind_blob.html
       static sqlite3_bind_double := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_double")
       return DllCall(sqlite3_bind_double
-         , "Ptr", stmt,
+         , "Ptr", stmt
          , "Int", Index
          , "Double", Value
          , "Cdecl Int")
@@ -1147,7 +1147,7 @@ Class SQriLiteDB {
    sqlite3_bind_int(stmt, Index, Value) {   ;https://sqlite.org/c3ref/bind_blob.html
       static sqlite3_bind_int := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_int")
       return DllCall(sqlite3_bind_int
-         , "Ptr", stmt,
+         , "Ptr", stmt
          , "Int", Index
          , "Int", Value
          , "Cdecl Int")
@@ -1163,7 +1163,7 @@ Class SQriLiteDB {
    sqlite3_bind_null(stmt, Index) { ;https://sqlite.org/c3ref/bind_blob.html
       static sqlite3_bind_null := this._getDllAddress(SQriLiteDB._SQLiteDLL, "sqlite3_bind_null")
       return DllCall(sqlite3_bind_null
-         , "Ptr", stmt,
+         , "Ptr", stmt
          , "Int", Index
          , "Cdecl Int")
    }
